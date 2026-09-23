@@ -8,7 +8,8 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square)](LICENSE)
 
 > **Submission for TigerGraph × Hacker House Goa 2026 Hackathon**  
-> *An autonomous AI agent that investigates credit card fraud, handles uncertain signals, evolves next-best actions before and after gathering controlled evidence, and writes episodic case memory back into TigerGraph.*
+> *An autonomous AI agent that investigates credit card fraud, handles uncertain signals, evolves next-best actions before and after gathering controlled evidence, and writes episodic case memory back into TigerGraph.*  
+> 📑 **Submission Guide:** See [HACKATHON_SUBMISSION.md](HACKATHON_SUBMISSION.md) for the pre-filled form and exact responses.
 
 ---
 
