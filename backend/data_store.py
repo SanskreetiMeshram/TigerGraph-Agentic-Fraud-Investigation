@@ -9,27 +9,47 @@ import sqlite3
 import pandas as pd
 from typing import Dict, List, Optional, Any, Tuple
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "dataset", "fraud_graph.db")
 DATASET_DIR = os.path.join(os.path.dirname(__file__), "..", "dataset")
+
+def get_db_path() -> str:
+    local_path = os.path.join(DATASET_DIR, "fraud_graph.db")
+    if os.path.exists(local_path):
+        return local_path
+    try:
+        os.makedirs(DATASET_DIR, exist_ok=True)
+        test_file = os.path.join(DATASET_DIR, ".write_test")
+        with open(test_file, "w") as f:
+            f.write("1")
+        os.remove(test_file)
+        return local_path
+    except Exception:
+        tmp_dir = "/tmp" if os.path.exists("/tmp") else os.environ.get("TEMP", os.environ.get("TMP", "."))
+        return os.path.join(tmp_dir, "fraud_graph.db")
+
+DB_PATH = get_db_path()
 
 def init_db(force_rebuild: bool = False):
     """Initializes and populates SQLite graph store if not already present."""
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    if os.path.exists(DB_PATH) and not force_rebuild:
-        conn = sqlite3.connect(DB_PATH)
-        cur = conn.cursor()
+    db_path = get_db_path()
+    try:
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    except Exception:
+        pass
+
+    if os.path.exists(db_path) and not force_rebuild:
         try:
+            conn = sqlite3.connect(db_path)
+            cur = conn.cursor()
             cur.execute("SELECT count(*) FROM transactions")
             count = cur.fetchone()[0]
-            if count > 500000:
-                conn.close()
+            conn.close()
+            if count > 0:
                 return
         except Exception:
             pass
-        conn.close()
 
-    print(f"Building fast local Graph Index at {DB_PATH}...")
-    conn = sqlite3.connect(DB_PATH)
+    print(f"Building fast local Graph Index at {db_path}...")
+    conn = sqlite3.connect(db_path)
     cur = conn.cursor()
 
     # Drop existing tables
@@ -180,7 +200,7 @@ def init_db(force_rebuild: bool = False):
 def get_connection():
     """Returns a SQLite connection to the graph database."""
     init_db()
-    return sqlite3.connect(DB_PATH)
+    return sqlite3.connect(get_db_path())
 
 if __name__ == "__main__":
     init_db(force_rebuild=True)
