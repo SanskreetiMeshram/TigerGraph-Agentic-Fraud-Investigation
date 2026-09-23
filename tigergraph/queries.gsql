@@ -1,0 +1,111 @@
+// TigerGraph GSQL Analytics Queries for Agentic Fraud Investigation
+USE GRAPH FraudGraph
+
+// 1. Sliding card window to detect bursts, testing sequences, and high velocity
+CREATE OR REPLACE QUERY card_window(
+    STRING card_id,
+    DATETIME anchor_time,
+    INT hours
+) FOR GRAPH FraudGraph RETURNS (ListAccum<VERTEX<Transaction>>) {
+    ListAccum<VERTEX<Transaction>> @@txns;
+    
+    Start = {Card.*};
+    TargetCard = SELECT c FROM Start:c WHERE c.card_id == card_id;
+    
+    Txns = SELECT t FROM TargetCard-(MADE)->Transaction:t
+           WHERE abs(datetime_diff(t.ts, anchor_time)) <= (hours * 3600)
+           ACCUM @@txns += t;
+           
+    RETURN @@txns;
+}
+
+// 2. Multi-hop link expansion for device sharing detection across cards and customers
+CREATE OR REPLACE QUERY device_neighbors(
+    STRING device_profile_id
+) FOR GRAPH FraudGraph RETURNS (SetAccum<STRING>, SetAccum<STRING>) {
+    SetAccum<STRING> @@connected_cards;
+    SetAccum<STRING> @@connected_customers;
+    
+    Start = {DeviceProfile.*};
+    TargetDevice = SELECT d FROM Start:d WHERE d.device_profile_id == device_profile_id;
+    
+    // Hop 1: Transactions using this device
+    Txns = SELECT t FROM TargetDevice<-(FROM_DEVICE)-Transaction:t;
+    
+    // Hop 2: Cards that made those transactions
+    Cards = SELECT c FROM Txns<-(MADE)-Card:c
+            ACCUM @@connected_cards += c.card_id;
+            
+    // Hop 3: Customers owning those cards
+    Customers = SELECT cust FROM Cards<-(OWNS)-Customer:cust
+                ACCUM @@connected_customers += cust.customer_id;
+                
+    RETURN @@connected_cards, @@connected_customers;
+}
+
+// 3. Billing region burst vs historical baseline
+CREATE OR REPLACE QUERY region_burst(
+    STRING customer_id,
+    STRING card_id,
+    STRING test_region
+) FOR GRAPH FraudGraph RETURNS (INT, INT) {
+    SumAccum<INT> @@home_region_count = 0;
+    SumAccum<INT> @@foreign_region_count = 0;
+    
+    Start = {Card.*};
+    TargetCard = SELECT c FROM Start:c WHERE c.card_id == card_id;
+    
+    Txns = SELECT t FROM TargetCard-(MADE)->Transaction:t
+           ACCUM
+               IF t.addr1 == test_region THEN
+                   @@foreign_region_count += 1
+               ELSE
+                   @@home_region_count += 1
+               END;
+               
+    RETURN @@home_region_count, @@foreign_region_count;
+}
+
+// 4. Retrieve historical case memory
+CREATE OR REPLACE QUERY find_similar_cases(
+    STRING target_pattern,
+    STRING target_customer_id,
+    STRING target_card_id,
+    INT max_results
+) FOR GRAPH FraudGraph RETURNS (ListAccum<VERTEX<ClosedCase>>) {
+    ListAccum<VERTEX<ClosedCase>> @@cases;
+    
+    Start = {ClosedCase.*};
+    Matched = SELECT cc FROM Start:cc
+              WHERE cc.pattern == target_pattern OR cc.customer_id == target_customer_id
+              LIMIT max_results;
+              
+    FOREACH c IN Matched DO
+        @@cases += c;
+    END;
+    
+    RETURN @@cases;
+}
+
+// 5. Case insertion into graph memory
+CREATE OR REPLACE QUERY insert_case_vertex(
+    STRING case_id,
+    STRING status,
+    STRING verdict,
+    DOUBLE fraud_prob,
+    STRING pattern,
+    DOUBLE exposure,
+    STRING stop_reason,
+    STRING summary,
+    STRING card_id
+) FOR GRAPH FraudGraph {
+    INSERT INTO InvestigationCase (
+        PRIMARY_ID, case_id, status, verdict, fraud_probability, pattern, exposure_usd, stop_reason, summary, created_at
+    ) VALUES (
+        case_id, case_id, status, verdict, fraud_prob, pattern, exposure, stop_reason, summary, now()
+    );
+    
+    INSERT INTO CASE_ON_CARD (FROM, TO) VALUES (case_id, card_id);
+}
+
+INSTALL QUERY card_window, device_neighbors, region_burst, find_similar_cases, insert_case_vertex

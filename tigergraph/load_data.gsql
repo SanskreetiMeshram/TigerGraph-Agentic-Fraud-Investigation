@@ -1,0 +1,49 @@
+// TigerGraph GSQL Loading Jobs for IEEE-CIS Dataset
+USE GRAPH FraudGraph
+
+CREATE LOADING JOB load_fraud_data FOR GRAPH FraudGraph {
+    // Data files
+    DEFINE FILENAME txn_file = "./dataset/transactions.csv";
+    DEFINE FILENAME identity_file = "./dataset/identity.csv";
+    DEFINE FILENAME closed_cases_file = "./dataset/closed_cases_history.csv";
+
+    // Load Customers and Cards from transactions
+    LOAD txn_file TO VERTEX Customer VALUES($customer_id, $customer_id) USING header="true", separator=",";
+    LOAD txn_file TO VERTEX Card VALUES($card1, $card1, $card4, $card6, $card2) USING header="true", separator=",";
+    LOAD txn_file TO EDGE OWNS VALUES($customer_id, $card1) USING header="true", separator=",";
+
+    // Load Transactions
+    LOAD txn_file TO VERTEX Transaction VALUES(
+        $TransactionID, $TransactionID, $ts, $TransactionAmt, $ProductCD, $channel, $risk_score, $addr1, $addr2, $P_emaildomain, $R_emaildomain
+    ) USING header="true", separator=",";
+    LOAD txn_file TO EDGE MADE VALUES($card1, $TransactionID) USING header="true", separator=",";
+    
+    // Load Billing Regions and Emails
+    LOAD txn_file TO VERTEX BillingRegion VALUES($addr1, $addr1) WHERE $addr1 != "" USING header="true", separator=",";
+    LOAD txn_file TO EDGE BILLED_IN VALUES($TransactionID, $addr1) WHERE $addr1 != "" USING header="true", separator=",";
+    
+    LOAD txn_file TO VERTEX EmailDomain VALUES($P_emaildomain, $P_emaildomain) WHERE $P_emaildomain != "" USING header="true", separator=",";
+    LOAD txn_file TO EDGE PURCHASER_EMAIL VALUES($TransactionID, $P_emaildomain) WHERE $P_emaildomain != "" USING header="true", separator=",";
+
+    // Load Identities and DeviceProfiles
+    LOAD identity_file TO VERTEX DeviceProfile VALUES(
+        gsql_concat($DeviceInfo, " | ", $id_30, " | ", $id_31, " | ", $id_33),
+        gsql_concat($DeviceInfo, " | ", $id_30, " | ", $id_31, " | ", $id_33),
+        $DeviceInfo, $id_30, $id_31, $id_33, $DeviceType,
+        CASE WHEN $id_23 == "proxy" OR $id_23 == "anonymous" OR $id_23 == "hidden" THEN true ELSE false END
+    ) USING header="true", separator=",";
+
+    LOAD identity_file TO EDGE FROM_DEVICE VALUES(
+        $TransactionID,
+        gsql_concat($DeviceInfo, " | ", $id_30, " | ", $id_31, " | ", $id_33)
+    ) USING header="true", separator=",";
+
+    // Load Closed Cases
+    LOAD closed_cases_file TO VERTEX ClosedCase VALUES(
+        $case_id, $case_id, $opened_at, $closed_at, $outcome, $pattern, $n_txns, $exposure_usd, $actions_taken,
+        CASE WHEN $report_filed == "Yes" THEN true ELSE false END,
+        $analyst_notes
+    ) USING header="true", separator=",";
+    
+    LOAD closed_cases_file TO EDGE ON_CARD VALUES($case_id, $card_id) USING header="true", separator=",";
+}

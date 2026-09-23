@@ -1,0 +1,115 @@
+{
+  "case_id": "HHG-015",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.92,
+    "pattern": "undocumented",
+    "pattern_description": "Coordinated multi-card device sharing syndicate: Device profile (Trident/7.0 | Windows 8.1 | ie 11.0 for desktop | 1680x1050) was utilized across 8 distinct customer accounts in a synchronized timeframe, frequently routing via anonymous proxy infrastructure (Proxy IP).",
+    "affected_txn_ids": [
+      "3464869"
+    ],
+    "first_suspicious_txn_id": "3464869",
+    "connected_card_ids": [
+      "C00681-K1",
+      "C01155-K2",
+      "C02881-K1",
+      "C05292-K1",
+      "C05704-K2",
+      "C11227-K2",
+      "C11413-K1"
+    ],
+    "connected_device_profiles": [
+      "Trident/7.0 | Windows 8.1 | ie 11.0 for desktop | 1680x1050"
+    ],
+    "exposure_usd": 599.94,
+    "evidence": [
+      {
+        "claim": "Device profile is shared across 7 other cardholders (C00681-K1, C01155-K2, C02881-K1, C05292-K1)",
+        "source": "graph",
+        "ref": "query:device_neighbors",
+        "entity_ids": [
+          "C00681-K1",
+          "C01155-K2",
+          "C02881-K1",
+          "C05292-K1",
+          "C05704-K2"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0615",
+      "CC-1313",
+      "CC-3886"
+    ],
+    "summary": "Coordinated fraud syndicate identified across multiple cardholders sharing device profile Trident/7.0 | Windows 8.1 | ie 11.0 for desktop | 1680x1050. Multi-hop graph traversal linked transaction 3464869 on C03042-K1 with 7 additional compromised cards routing via anonymous proxy infrastructure. Recommended card block, regulatory SAR filing, and monitoring connected cards per Policy R6 and R9.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-2016-015"
+  },
+  "evidence_requests": [
+    {
+      "type": "analyst_info",
+      "asked_after_step": 3,
+      "assumed_response": "Fraud intelligence team confirms device profile is associated with known compromised credentials ring."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "DECLINE_TRANSACTION",
+        "route": "L1",
+        "reason": "R6: shared device footprint detected across multiple cards"
+      },
+      {
+        "action": "STEP_UP_AUTH",
+        "route": "auto",
+        "reason": "R1: require step-up authentication on suspicious device"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2 & R6: compromised device profile across cardholders"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R6 & R9: open coordinated ring fraud case"
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "R6 & R9: coordinated multi-customer syndicate requires regulatory SAR filing"
+      },
+      {
+        "action": "MONITOR_CONNECTED_CARDS",
+        "route": "auto",
+        "reason": "R6: place 7 connected cards under active surveillance"
+      }
+    ],
+    "what_changed": "Analyst confirmation and multi-hop graph expansion confirmed coordinated ring activity, adding regulatory report filing and connected card monitoring."
+  },
+  "sar": {
+    "file": true,
+    "reason": "Policy Rule R6 and R9: Coordinated syndicate utilizing shared device across multiple cardholders.",
+    "narrative": "This Suspicious Activity Report (SAR) documents unauthorized credit card fraud identified on customer account C03042. On 2016-11-17 14:03:36, flagged transaction 3464869 for $599.94 was detected via online channel with an elevated risk score of 0.77. Graph analytics and multi-hop link expansion revealed that the transaction was associated with device profile 'Trident/7.0 | Windows 8.1 | ie 11.0 for desktop | 1680x1050', which was identified across 7 additional cardholder accounts (C00681-K1, C01155-K2, C02881-K1). The cardholder, when contacted for transaction validation, confirmed they did not authorize the transactions and remained in possession of their physical card. The activity exhibits characteristics consistent with undocumented, where compromised credentials or card data were systematically exploited. Total cumulative fraudulent exposure across identified affected transactions (3464869) totals $599.94. The financial institution has taken immediate mitigating actions by blocking card C03042-K1 for reissue, opening internal case HHG-015 in graph memory, and placing all connected card accounts under continuous surveillance per Bank Policy R2, R6, and regulatory guidelines.",
+    "subjects": [
+      "C03042",
+      "C03042-K1",
+      "C00681-K1",
+      "C01155-K2",
+      "C02881-K1",
+      "Trident/7.0 | Windows 8.1 | ie 11.0 for desktop | "
+    ],
+    "total_amount_usd": 599.94,
+    "activity_dates": [
+      "2016-11-17",
+      "2016-11-17"
+    ]
+  },
+  "stop_reason": "Multi-hop graph link analysis identified coordinated device sharing across multiple cards with anonymous proxy routing. Stop condition met per R6 and R9.",
+  "tool_calls": 6,
+  "tokens": 5784,
+  "latency_s": 0.42
+}

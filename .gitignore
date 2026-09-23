@@ -1,0 +1,30 @@
+# Virtual environment
+.venv/
+env/
+venv/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+*.so
+.pytest_cache/
+
+# Large dataset files (>100MB exceeds GitHub limits)
+dataset/transactions.csv
+dataset/fraud_graph.db
+
+# Frontend dependencies
+frontend/node_modules/
+.npm
+npm-debug.log*
+
+# Environment and credentials
+.env
+.env.local
+
+# OS generated files
+.DS_Store
+Thumbs.db

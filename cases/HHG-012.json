@@ -1,0 +1,69 @@
+{
+  "case_id": "HHG-012",
+  "case": {
+    "status": "open",
+    "verdict": "uncertain",
+    "fraud_probability": 0.52,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0.0,
+    "evidence": [],
+    "similar_prior_cases": [
+      "CC-0003",
+      "CC-2370"
+    ],
+    "summary": "Investigation for HHG-012 paused in uncertain state. Flagged transaction 3553342 ($30.91) carries a moderate risk score (0.55) but lacks secondary corroborating fraud indicators. Policy R1 strictly prohibits blocking legitimate cardholders on single weak signals; verification ping dispatched to cardholder while card remains under monitoring.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-2016-012"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 2,
+      "assumed_response": "Pending cardholder verification via mobile push notification."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "ALLOW_TRANSACTION",
+        "route": "auto",
+        "reason": "R1: weak single signal (<0.70), allow pending verification to prevent false positive"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: verify transaction validity with cardholder before blocking"
+      }
+    ],
+    "final": [
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R1 & R4: maintain heightened card monitoring pending response"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: verification inquiry sent to cardholder"
+      }
+    ],
+    "what_changed": "Maintained non-intrusive monitoring pending customer response, complying with Policy R1 safeguard against unwarranted blocks."
+  },
+  "sar": {
+    "file": false,
+    "reason": "Confirmed fraud exposure is below $1,000 threshold and isolated without shared device links per Policy Section 3a.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "Single weak model score without secondary corroborating graph signals requires customer verification before defensible blocking per Policy R1.",
+  "tool_calls": 6,
+  "tokens": 5572,
+  "latency_s": 0.42
+}
