@@ -10,6 +10,8 @@ __pycache__/
 *$py.class
 *.pyd
 *.so
+*.egg-info/
+build/
 .pytest_cache/
 
 # Large dataset files (>100MB exceeds GitHub limits)

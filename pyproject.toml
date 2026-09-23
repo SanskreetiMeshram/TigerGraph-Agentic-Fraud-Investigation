@@ -21,5 +21,8 @@ dependencies = [
     "tqdm>=4.66.0",
 ]
 
+[tool.setuptools.packages.find]
+include = ["backend*"]
+
 [tool.vercel]
 entrypoint = "backend.server:app"
